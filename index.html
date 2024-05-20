@@ -23,9 +23,14 @@
 </head>
 
 <body class="m-0 pb-12 font-sans bg-gray-800">
+    <div class="flex justify-between p-2 bg-black bg-opacity-50 fixed top-0 left-0 right-0">
+        <h1 class="text-white">Create or join a group:</h1>
+        <input id="groupName" type="text" placeholder="Group Name" class="border-none px-4 rounded m-1 focus:outline-none">
+        <button id="createGroup" class="bg-gray-800 border-none px-4 m-1 rounded text-white">Create Group</button>
+        <button id="joinGroup" class="bg-gray-800 border-none px-4 m-1 rounded text-white">Join Group</button>
+    </div>
     <ul id="messages" class="list-none m-0 p-0 content-between"></ul>
-    <form id="form" action=""
-        class="bg-black bg-opacity-15 p-1 fixed bottom-0 left-0 right-0 flex h-12 box-border backdrop-filter backdrop-blur-md">
+    <form id="form" action="" class="bg-black bg-opacity-15 p-1 fixed bottom-0 left-0 right-0 flex h-12 box-border backdrop-filter backdrop-blur-md">
         <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
         <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
     </form>
@@ -36,11 +41,32 @@
         var messages = document.getElementById('messages');
         var form = document.getElementById('form');
         var input = document.getElementById('input');
+        var groupNameInput = document.getElementById('groupName');
+        var createGroupBtn = document.getElementById('createGroup');
+        var joinGroupBtn = document.getElementById('joinGroup');
+
+        createGroupBtn.addEventListener('click', function () {
+            var groupName = groupNameInput.value.trim();
+            if (groupName) {
+                socket.emit('create group', groupName);
+                groupNameInput.value = '';
+            }
+        });
+
+        joinGroupBtn.addEventListener('click', function () {
+            var groupName = groupNameInput.value.trim();
+            if (groupName) {
+                socket.emit('join group', groupName);
+                groupNameInput.value = '';
+            }
+        });
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            if (input.value) {
-                socket.emit('chat message', input.value);
+            var msg = input.value.trim();
+            var group = groupNameInput.value.trim();
+            if (msg && group) {
+                socket.emit('chat message', { msg: msg, group: group });
                 input.value = '';
             }
         });
@@ -58,7 +84,30 @@
             }
         });
 
+        socket.on('group created', function (groupName) {
+            console.log('Group created:', groupName);
+        });
+
+        socket.on('user joined', function (data) {
+            console.log('User joined:', data.userId);
+        });
+
+        socket.on('user left', function (data) {
+            console.log('User left:', data.userId);
+        });
+        socket.on('update group list', function (groupNames) {
+            groupList.innerHTML = '';
+            groupNames.forEach(function (groupName) {
+                var listItem = document.createElement('li');
+                listItem.textContent = groupName;
+                listItem.addEventListener('click', function () {
+                    socket.emit('join group', groupName);
+                });
+                groupList.appendChild(listItem);
+            });
+        });
     </script>
 </body>
+
 
 </html>
