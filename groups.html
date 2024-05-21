@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        #messages>li {
+            padding: 0.5rem 1rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        #messages>li.bg-gray-300 {
+            border-radius: 1rem;
+        }
+
+        #messages>li.user {
+            text-align: right;
+            border-radius: 1rem;
+        }
+
+        #messages>li.system {
+            text-align: center;
+            background-color: cornflowerblue;
+            border-radius: 1rem;
+            color: white;
+        }
+
+        .box {
+            height: 600px;
+        }
+    </style>
+</head>
+
+<body class="m-0 pb-12 font-sans bg-gray-800 flex items-center justify-center min-h-screen">
+
+    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0">
+        <h1 class="text-center text-xl">Socket Groups</h1>
+    </header>
+
+    <div class="flex items-center justify-center w-full h-full">
+        <div class="box bg-white rounded-lg shadow-lg w-3/4 p-4 overflow-auto">
+            <ul id="messages" class="list-none"></ul>
+            <div id="groups" class="mt-4">
+                <h2 class="text-lg font-semibold">Groups</h2>
+                <ul id="group-list" class="list-none mt-2"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
+        <div class="flex h-12 box-border mt-2">
+            <input id="group-input" autocomplete="off"
+                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
+            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Create Group</button>
+            <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        var messages = document.getElementById('messages');
+        var groupList = document.getElementById('group-list');
+        var groupInput = document.getElementById('group-input');
+        var joinGroupButton = document.getElementById('join-group');
+        var leaveGroupButton = document.getElementById('leave-group');
+        var currentGroup = '';
+
+        joinGroupButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (groupInput.value) {
+                var groupName = groupInput.value;
+                socket.emit('join group', groupName);
+                currentGroup = groupName;
+                addGroupToList(groupName);
+                groupInput.value = '';
+            }
+        });
+
+        leaveGroupButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (currentGroup) {
+                socket.emit('leave group', currentGroup);
+                currentGroup = '';
+            }
+        });
+
+        socket.on('chat message', function (msgData) {
+            var item = document.createElement('li');
+            item.textContent = msgData.msg;
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+
+            if (msgData.userId === 'system') {
+                item.classList.add('system');
+            } else if (msgData.userId === socket.id) {
+                item.classList.add('bg-green-600', 'user');
+            } else {
+                item.classList.add('bg-gray-600', 'rounded-2xl');
+            }
+        });
+
+        socket.on('left group', function (group) {
+            var item = document.createElement('li');
+            item.textContent = `You left the group: ${group}`;
+            item.classList.add('system');
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        function addGroupToList(groupName) {
+            var listItem = document.createElement('li');
+            listItem.className = "flex justify-between items-center p-2 border-b border-gray-300";
+
+            var groupNameSpan = document.createElement('span');
+            groupNameSpan.textContent = groupName;
+            listItem.appendChild(groupNameSpan);
+
+            var joinButton = document.createElement('button');
+            joinButton.textContent = "Join Group";
+            joinButton.className = "bg-blue-500 text-white px-3 py-1 rounded";
+            joinButton.addEventListener('click', function () {
+                socket.emit('join group', groupName);
+                currentGroup = groupName;
+            });
+            listItem.appendChild(joinButton);
+
+            groupList.appendChild(listItem);
+        }
+    </script>
+</body>
+
+</html>
