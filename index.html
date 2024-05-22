@@ -41,6 +41,15 @@
             color: white;
             text-decoration: none;
         }
+
+        .user-label {
+            width: 30%;
+            border-radius: 5px;
+            background-color: black;
+            font-size: 0.75rem;
+            color: white;
+            display: block;
+        }
     </style>
 </head>
 
@@ -65,26 +74,44 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-
         var messages = document.getElementById('messages');
         var form = document.getElementById('form');
         var input = document.getElementById('input');
-        var groupInput = document.getElementById('group-input');
         var currentGroup = '';
+
+
+        var savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+        savedMessages.forEach(function (msgData) {
+            appendMessage(msgData);
+        });
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
-                socket.emit('chat message', { msg: input.value, group: currentGroup });
+                var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
+                socket.emit('chat message', msgData);
                 input.value = '';
             }
         });
 
         socket.on('chat message', function (msgData) {
+            appendMessage(msgData);
+            saveMessage(msgData);
+        });
+
+        function appendMessage(msgData) {
             var item = document.createElement('li');
-            item.textContent = msgData.msg;
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
+
+            if (msgData.userId !== 'system') {
+                var userLabel = document.createElement('span');
+                userLabel.textContent = msgData.userId;
+                userLabel.classList.add('user-label');
+                item.appendChild(userLabel);
+            }
+
+            var messageText = document.createElement('span');
+            messageText.textContent = msgData.msg;
+            item.appendChild(messageText);
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
@@ -93,15 +120,14 @@
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
             }
-        });
-
-        socket.on('left group', function (group) {
-            var item = document.createElement('li');
-            item.textContent = `You left the group: ${group}`;
-            item.classList.add('system');
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
-        });
+        }
+
+        function saveMessage(msgData) {
+            savedMessages.push(msgData);
+            localStorage.setItem('messages', JSON.stringify(savedMessages));
+        }
     </script>
 </body>
 

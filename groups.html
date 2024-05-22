@@ -30,6 +30,16 @@
         .box {
             height: 600px;
         }
+
+        .user-label {
+            padding-left: 10px;
+            width: 20%;
+            border-radius: 5px;
+            background-color: white;
+            font-size: 0.75rem;
+            color: black;
+            display: block;
+        }
     </style>
 </head>
 
@@ -54,10 +64,11 @@
         <div class="flex h-12 box-border mt-2">
             <input id="group-input" autocomplete="off"
                 class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
-            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Join Group</button>
+            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Create Group</button>
             <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
         </div>
     </div>
+
 
     <div class="fixed bottom-12 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
@@ -79,6 +90,14 @@
         var form = document.getElementById('form');
         var input = document.getElementById('input');
         var currentGroup = '';
+
+
+        var savedMessages = JSON.parse(localStorage.getItem('groupMessages')) || [];
+        savedMessages.forEach(function (msgData) {
+            if (!msgData.group || msgData.group === currentGroup) {
+                appendMessage(msgData);
+            }
+        });
 
         joinGroupButton.addEventListener('click', function (e) {
             e.preventDefault();
@@ -102,16 +121,30 @@
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
-                socket.emit('chat message', { msg: input.value, group: currentGroup });
+                var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
+                socket.emit('chat message', msgData);
                 input.value = '';
             }
         });
 
         socket.on('chat message', function (msgData) {
+            appendMessage(msgData);
+            saveMessage(msgData);
+        });
+
+        function appendMessage(msgData) {
             var item = document.createElement('li');
-            item.textContent = msgData.msg;
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
+
+            if (msgData.userId !== 'system') {
+                var userLabel = document.createElement('span');
+                userLabel.textContent = msgData.userId;
+                userLabel.classList.add('user-label');
+                item.appendChild(userLabel);
+            }
+
+            var messageText = document.createElement('span');
+            messageText.textContent = msgData.msg;
+            item.appendChild(messageText);
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
@@ -120,7 +153,14 @@
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
             }
-        });
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function saveMessage(msgData) {
+            savedMessages.push(msgData);
+            localStorage.setItem('groupMessages', JSON.stringify(savedMessages));
+        }
 
         socket.on('left group', function (group) {
             var item = document.createElement('li');
@@ -130,15 +170,6 @@
             messages.scrollTop = messages.scrollHeight;
         });
 
-        function addGroupToList(groupName) {
-            var listItem = document.createElement('li');
-            listItem.className = "flex justify-between items-center p-2 border-b border-gray-300";
-
-            var groupNameSpan = document.createElement('span');
-            groupNameSpan.textContent = groupName;
-            listItem.appendChild(groupNameSpan)
-            groupList.appendChild(listItem);
-        }
     </script>
 </body>
 
