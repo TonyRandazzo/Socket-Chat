@@ -12,11 +12,17 @@ services:
       - "3000:3000"
     command: bash -c "npm install && npm start"
     depends_on:
-      - mongodb
-    links:
-      - mongodb:mongodb
+      - mysql_db
 
-  mongodb:
-    image: mongo
+  mysql_db:
+    image: mysql:latest
+    container_name: chat-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
     ports:
-      - "27017:27017"
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
