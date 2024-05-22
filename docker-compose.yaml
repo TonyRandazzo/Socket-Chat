@@ -11,3 +11,12 @@ services:
     ports:
       - "3000:3000"
     command: bash -c "npm install && npm start"
+    depends_on:
+      - mongodb
+    links:
+      - mongodb:mongodb
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"

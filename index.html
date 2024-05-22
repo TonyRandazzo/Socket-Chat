@@ -32,8 +32,7 @@
         }
 
         .create-group-link {
-            position: absolute;
-            top: 1rem;
+            position: relative;
             right: 1rem;
             background-color: #38a169;
             padding: 0.5rem 1rem;
@@ -43,11 +42,12 @@
         }
 
         .user-label {
-            width: 30%;
+            padding-left: 10px;
+            width: 20%;
             border-radius: 5px;
-            background-color: black;
+            background-color: white;
             font-size: 0.75rem;
-            color: white;
+            color: black;
             display: block;
         }
     </style>
@@ -55,10 +55,14 @@
 
 <body class="m-0 pb-12 font-sans bg-gray-800 flex items-center justify-center min-h-screen">
 
-    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0">
+    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Chat</h1>
+        <input id="username-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
+            placeholder="Enter Username">
+        <button id="load-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Chat</button>
         <a href="/groups.html" class="create-group-link">Create Groups</a>
     </header>
+
 
     <div class="flex items-center justify-center w-full h-full">
         <ul id="messages" class="box list-none p-4 bg-white rounded-lg shadow-lg w-3/4 overflow-auto"></ul>
@@ -66,7 +70,8 @@
 
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
-            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
+            <input id="input" autocomplete="off"
+                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
             <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
         </form>
     </div>
@@ -78,12 +83,18 @@
         var form = document.getElementById('form');
         var input = document.getElementById('input');
         var currentGroup = '';
+        var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
+        var savedMessagesByGroup = JSON.parse(localStorage.getItem('messagesByGroup')) || {};
+        var usernameInput = document.getElementById('username-input');
+    var loadChatButton = document.getElementById('load-chat');
+
 
 
         var savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
         savedMessages.forEach(function (msgData) {
             appendMessage(msgData);
         });
+
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
@@ -125,9 +136,33 @@
         }
 
         function saveMessage(msgData) {
-            savedMessages.push(msgData);
-            localStorage.setItem('messages', JSON.stringify(savedMessages));
+            if (msgData.group) {
+                if (!savedMessagesByGroup[msgData.group]) {
+                    savedMessagesByGroup[msgData.group] = [];
+                }
+                savedMessagesByGroup[msgData.group].push(msgData);
+                localStorage.setItem('messagesByGroup', JSON.stringify(savedMessagesByGroup));
+            } else {
+                if (!savedMessagesByUser[msgData.userId]) {
+                    savedMessagesByUser[msgData.userId] = [];
+                }
+                savedMessagesByUser[msgData.userId].push(msgData);
+                localStorage.setItem('messagesByUser', JSON.stringify(savedMessagesByUser));
+            }
         }
+        loadChatButton.addEventListener('click', function () {
+        var username = usernameInput.value;
+        var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
+        var userMessages = savedMessagesByUser[username];
+        if (userMessages) {
+            messages.innerHTML = '';
+            userMessages.forEach(function (msgData) {
+                appendMessage(msgData);
+            });
+        } else {
+            alert("No messages found for this user.");
+        }
+    });
     </script>
 </body>
 

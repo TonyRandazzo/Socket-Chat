@@ -45,17 +45,15 @@
 
 <body class="m-0 pb-12 font-sans bg-gray-800 flex items-center justify-center min-h-screen">
 
-    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0">
+    <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Groups</h1>
+        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black" placeholder="Enter Group Name">
+        <button id="load-group-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Group Chat</button>
     </header>
 
     <div class="flex items-center justify-center w-full h-full">
         <div class="box bg-white rounded-lg shadow-lg w-3/4 p-4 overflow-auto">
             <ul id="messages" class="list-none"></ul>
-            <div id="groups" class="mt-4">
-                <h2 class="text-lg font-semibold">Groups</h2>
-                <ul id="group-list" class="list-none mt-2"></ul>
-            </div>
         </div>
     </div>
 
@@ -64,7 +62,7 @@
         <div class="flex h-12 box-border mt-2">
             <input id="group-input" autocomplete="off"
                 class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
-            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Create Group</button>
+            <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Join Group</button>
             <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
         </div>
     </div>
@@ -90,9 +88,9 @@
         var form = document.getElementById('form');
         var input = document.getElementById('input');
         var currentGroup = '';
-
-
+        var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
         var savedMessages = JSON.parse(localStorage.getItem('groupMessages')) || [];
+
         savedMessages.forEach(function (msgData) {
             if (!msgData.group || msgData.group === currentGroup) {
                 appendMessage(msgData);
@@ -105,7 +103,6 @@
                 var groupName = groupInput.value;
                 socket.emit('join group', groupName);
                 currentGroup = groupName;
-                addGroupToList(groupName);
                 groupInput.value = '';
             }
         });
@@ -123,13 +120,14 @@
             if (input.value) {
                 var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
                 socket.emit('chat message', msgData);
+                saveMessage(msgData.group, msgData); // Chiamata corretta a saveMessage
                 input.value = '';
             }
         });
 
         socket.on('chat message', function (msgData) {
             appendMessage(msgData);
-            saveMessage(msgData);
+            saveMessage(msgData.group, msgData); // Chiamata corretta a saveMessage
         });
 
         function appendMessage(msgData) {
@@ -148,7 +146,8 @@
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
-            } else if (msgData.userId === socket.id) {
+            } else if (msgData.userId === socket.id)
+            {
                 item.classList.add('bg-green-600', 'user');
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
@@ -157,9 +156,14 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
-        function saveMessage(msgData) {
-            savedMessages.push(msgData);
-            localStorage.setItem('groupMessages', JSON.stringify(savedMessages));
+        function saveMessage(group, msgData) {
+            if (group) {
+                if (!savedMessagesByGroup[group]) {
+                    savedMessagesByGroup[group] = [];
+                }
+                savedMessagesByGroup[group].push(msgData);
+                localStorage.setItem('groupMessagesByGroup', JSON.stringify(savedMessagesByGroup));
+            }
         }
 
         socket.on('left group', function (group) {
@@ -169,7 +173,6 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         });
-
     </script>
 </body>
 
