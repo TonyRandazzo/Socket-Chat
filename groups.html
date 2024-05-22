@@ -47,7 +47,8 @@
 
     <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Groups</h1>
-        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black" placeholder="Enter Group Name">
+        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
+            placeholder="Enter Group Name">
         <button id="load-group-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Group Chat</button>
     </header>
 
@@ -90,7 +91,22 @@
         var currentGroup = '';
         var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
         var savedMessages = JSON.parse(localStorage.getItem('groupMessages')) || [];
+        var groupnameInput = document.getElementById('groupname-input');
+        var loadGroupChatButton = document.getElementById('load-group-chat');
 
+        loadGroupChatButton.addEventListener('click', function () {
+            var groupName = groupnameInput.value;
+            var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
+            var groupMessages = savedMessagesByGroup[groupName];
+            if (groupMessages) {
+                messages.innerHTML = '';
+                groupMessages.forEach(function (msgData) {
+                    appendMessage(msgData);
+                });
+            } else {
+                alert("No messages found for this group.");
+            }
+        });
         savedMessages.forEach(function (msgData) {
             if (!msgData.group || msgData.group === currentGroup) {
                 appendMessage(msgData);
@@ -120,14 +136,14 @@
             if (input.value) {
                 var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
                 socket.emit('chat message', msgData);
-                saveMessage(msgData.group, msgData); // Chiamata corretta a saveMessage
+                saveMessage(msgData.group, msgData);
                 input.value = '';
             }
         });
 
         socket.on('chat message', function (msgData) {
             appendMessage(msgData);
-            saveMessage(msgData.group, msgData); // Chiamata corretta a saveMessage
+            saveMessage(msgData.group, msgData);
         });
 
         function appendMessage(msgData) {
@@ -146,8 +162,7 @@
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
-            } else if (msgData.userId === socket.id)
-            {
+            } else if (msgData.userId === socket.id) {
                 item.classList.add('bg-green-600', 'user');
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
