@@ -4,6 +4,7 @@
     "description": "socket app",
     "dependencies": {
         "express": "^4.19.2",
+        "mysql": "^2.18.1",
         "socket.io": "^4.0.0"
     }
 }

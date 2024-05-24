@@ -93,9 +93,12 @@
         var savedMessages = JSON.parse(localStorage.getItem('groupMessages')) || [];
         var groupnameInput = document.getElementById('groupname-input');
         var loadGroupChatButton = document.getElementById('load-group-chat');
-
+        socket.on('connect', () => {
+            socket.emit('load messages', currentGroup);
+        });
         loadGroupChatButton.addEventListener('click', function () {
-            var groupName = groupnameInput.value;
+            var groupName = socket.id;
+            localStorage.setItem('currentGroupName', groupName);
             var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
             var groupMessages = savedMessagesByGroup[groupName];
             if (groupMessages) {
@@ -106,6 +109,10 @@
             } else {
                 alert("No messages found for this group.");
             }
+        });
+        socket.on('connect', function () {
+            var currentGroupName = socket.id;
+            localStorage.setItem('currentGroupName', currentGroupName);
         });
         savedMessages.forEach(function (msgData) {
             if (!msgData.group || msgData.group === currentGroup) {

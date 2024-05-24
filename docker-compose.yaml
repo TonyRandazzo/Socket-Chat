@@ -12,17 +12,38 @@ services:
       - "3000:3000"
     command: bash -c "npm install && npm start"
     depends_on:
-      - mysql_db
+      - chat_db
+    networks:
+      - chat_network
 
-  mysql_db:
-    image: mysql:latest
-    container_name: chat-db
+  chat_db:
+    image: mysql:5.7
+    container_name: chat_db
     environment:
+      MYSQL_USER: root
+      MYSQL_DATABASE: chat_db
       MYSQL_ROOT_PASSWORD: password
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - chat_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: chat_db
+      PMA_USER: root
+      PMA_PASSWORD: password
+    networks:
+      - chat_network
 
 volumes:
   mysql_data:
+
+networks:
+  chat_network:

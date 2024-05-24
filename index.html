@@ -86,10 +86,12 @@
         var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
         var savedMessagesByGroup = JSON.parse(localStorage.getItem('messagesByGroup')) || {};
         var usernameInput = document.getElementById('username-input');
-    var loadChatButton = document.getElementById('load-chat');
+        var loadChatButton = document.getElementById('load-chat');
 
 
-
+        socket.on('connect', () => {
+            socket.emit('load messages', currentGroup);
+        });
         var savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
         savedMessages.forEach(function (msgData) {
             appendMessage(msgData);
@@ -150,19 +152,33 @@
                 localStorage.setItem('messagesByUser', JSON.stringify(savedMessagesByUser));
             }
         }
+        socket.on('connect', function () {
+            var currentUsername = socket.id;
+            localStorage.setItem('currentUsername', currentUsername);
+        });
         loadChatButton.addEventListener('click', function () {
-        var username = usernameInput.value;
-        var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
-        var userMessages = savedMessagesByUser[username];
-        if (userMessages) {
-            messages.innerHTML = '';
-            userMessages.forEach(function (msgData) {
-                appendMessage(msgData);
-            });
-        } else {
-            alert("No messages found for this user.");
-        }
-    });
+            var username = usernameInput.value;
+            if (username) {
+                localStorage.setItem('currentUsername', username);
+                var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
+                var userMessages = savedMessagesByUser[username];
+                if (userMessages) {
+                    messages.innerHTML = '';
+                    userMessages.forEach(function (msgData) {
+                        appendMessage(msgData);
+                    });
+                    currentUsername = username;
+                    socket.id = currentUsername
+                    console.log(socket.id)
+                    socket.emit('set username', currentUsername);
+                } else {
+                    alert("No messages found for this user.");
+                }
+            } else {
+                alert("Please enter a username.");
+            }
+        });
+
     </script>
 </body>
 
