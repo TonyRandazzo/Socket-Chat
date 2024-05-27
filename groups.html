@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Socket chat</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -47,8 +46,7 @@
 
     <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Groups</h1>
-        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
-            placeholder="Enter Group Name">
+        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black" placeholder="Enter Group Name">
         <button id="load-group-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Group Chat</button>
     </header>
 
@@ -58,21 +56,17 @@
         </div>
     </div>
 
-
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <div class="flex h-12 box-border mt-2">
-            <input id="group-input" autocomplete="off"
-                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
+            <input id="group-input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
             <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Join Group</button>
             <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
         </div>
     </div>
 
-
     <div class="fixed bottom-12 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
-            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none"
-                placeholder="Type a message" />
+            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Type a message" />
             <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
         </form>
     </div>
@@ -80,77 +74,41 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io();
-
         var messages = document.getElementById('messages');
-        var groupList = document.getElementById('group-list');
         var groupInput = document.getElementById('group-input');
         var joinGroupButton = document.getElementById('join-group');
         var leaveGroupButton = document.getElementById('leave-group');
         var form = document.getElementById('form');
         var input = document.getElementById('input');
         var currentGroup = '';
-        var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
-        var savedMessages = JSON.parse(localStorage.getItem('groupMessages')) || [];
         var groupnameInput = document.getElementById('groupname-input');
         var loadGroupChatButton = document.getElementById('load-group-chat');
+
         socket.on('connect', () => {
             socket.emit('load messages', currentGroup);
         });
+
         loadGroupChatButton.addEventListener('click', function () {
-            var groupName = socket.id;
-            localStorage.setItem('currentGroupName', groupName);
-            var savedMessagesByGroup = JSON.parse(localStorage.getItem('groupMessagesByGroup')) || {};
-            var groupMessages = savedMessagesByGroup[groupName];
-            if (groupMessages) {
-                messages.innerHTML = '';
-                groupMessages.forEach(function (msgData) {
-                    appendMessage(msgData);
-                });
-            } else {
-                alert("No messages found for this group.");
-            }
-        });
-        socket.on('connect', function () {
-            var currentGroupName = socket.id;
-            localStorage.setItem('currentGroupName', currentGroupName);
-        });
-        savedMessages.forEach(function (msgData) {
-            if (!msgData.group || msgData.group === currentGroup) {
-                appendMessage(msgData);
-            }
-        });
-
-        joinGroupButton.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (groupInput.value) {
-                var groupName = groupInput.value;
-                socket.emit('join group', groupName);
+            var groupName = groupnameInput.value;
+            if (groupName) {
                 currentGroup = groupName;
-                groupInput.value = '';
-            }
-        });
-
-        leaveGroupButton.addEventListener('click', function (e) {
-            e.preventDefault();
-            if (currentGroup) {
-                socket.emit('leave group', currentGroup);
-                currentGroup = '';
+                socket.emit('load messages', currentGroup);
+            } else {
+                alert("Please enter a group name.");
             }
         });
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
-                var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
+                var msgData = { msg: input.value, group: currentGroup };
                 socket.emit('chat message', msgData);
-                saveMessage(msgData.group, msgData);
                 input.value = '';
             }
         });
 
         socket.on('chat message', function (msgData) {
             appendMessage(msgData);
-            saveMessage(msgData.group, msgData);
         });
 
         function appendMessage(msgData) {
@@ -169,7 +127,7 @@
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
-            } else if (msgData.userId === socket.id) {
+            } else if (msgData.userId === socket.username) {
                 item.classList.add('bg-green-600', 'user');
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
@@ -178,23 +136,27 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
-        function saveMessage(group, msgData) {
-            if (group) {
-                if (!savedMessagesByGroup[group]) {
-                    savedMessagesByGroup[group] = [];
-                }
-                savedMessagesByGroup[group].push(msgData);
-                localStorage.setItem('groupMessagesByGroup', JSON.stringify(savedMessagesByGroup));
+        joinGroupButton.addEventListener('click', function () {
+            var groupName = groupInput.value;
+            if (groupName) {
+                socket.emit('join group', groupName);
+                currentGroup = groupName;
+                socket.emit('load messages', currentGroup);
+            } else {
+                alert("Please enter a group name.");
             }
-        }
-
-        socket.on('left group', function (group) {
-            var item = document.createElement('li');
-            item.textContent = `You left the group: ${group}`;
-            item.classList.add('system');
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
         });
+
+        leaveGroupButton.addEventListener('click', function () {
+            var groupName = groupInput.value;
+            if (groupName) {
+                socket.emit('leave group', groupName);
+                currentGroup = '';
+            } else {
+                alert("Please enter a group name.");
+            }
+        });
+
     </script>
 </body>
 
