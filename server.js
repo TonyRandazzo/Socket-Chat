@@ -5,6 +5,7 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
 const mysql = require('mysql');
+<<<<<<< HEAD
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 
@@ -14,15 +15,19 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser()); 
 
 
+=======
+
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
 const connection = mysql.createConnection({
-  host: 'chat_db',
+  host: 'localhost',
   user: 'root',
-  password: 'password',
+  password: '',
   database: 'chat_db'
 });
 
 connection.connect((err) => {
   if (err) throw err;
+<<<<<<< HEAD
   console.log('Connesso al database MySQL!');
 
   const createMessagesTableQuery = `
@@ -77,6 +82,15 @@ app.post('/register', (req, res) => {
   });
 });
 
+=======
+  console.log('Connected to MySQL Database');
+});
+
+app.use(express.static(__dirname + '/public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const selectUserQuery = `
@@ -96,7 +110,10 @@ app.post('/login', (req, res) => {
   });
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
 io.on('connection', (socket) => {
   console.log('Utente Connesso');
 
@@ -120,6 +137,7 @@ io.on('connection', (socket) => {
           io.emit('chat message', { msg: 'Offline', userId: 'system' });
         });
 
+<<<<<<< HEAD
         socket.on('chat message', (data) => {
           const { msg, group } = data;
           const insertMessageQuery = `
@@ -151,12 +169,62 @@ io.on('connection', (socket) => {
               });
             });
           });
+=======
+        socket.on('join group', (group) => {
+          socket.join(group);
+          io.to(group).emit('chat message', { msg: `Utente ${socket.username} ha unito ${group}`, userId: 'system' });
+        });
+
+        socket.on('leave group', (group) => {
+          socket.leave(group);
+          io.to(group).emit('chat message', { msg: `Utente ${socket.username} ha lasciato ${group}`, userId: 'system' });
+          socket.emit('left group', group);
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
         });
       }
     });
   });
-});
 
+<<<<<<< HEAD
 server.listen(3000, () => {
   console.log('In ascolto su http://localhost:3000');
+=======
+  socket.on('chat message', (data) => {
+    const { msg, group } = data;
+    const insertMessageQuery = `
+      INSERT INTO messages (group_name, user_id, message)
+      VALUES (?, ?, ?);
+    `;
+    connection.query(insertMessageQuery, [group, socket.username, msg], (err, result) => {
+      if (err) throw err;
+      console.log('Messaggio salvato nel database!');
+    });
+    if (data.group) {
+      io.to(data.group).emit('chat message', { msg: data.msg, userId: socket.username });
+    } else {
+      io.emit('chat message', { msg: data.msg, userId: socket.username });
+    }
+  });
+
+  socket.on('load messages', (group) => {
+    const selectMessagesQuery = `
+      SELECT * FROM messages WHERE group_name = ? ORDER BY timestamp ASC;
+    `;
+    connection.query(selectMessagesQuery, [group], (err, results) => {
+      if (err) throw err;
+      results.forEach((result) => {
+        socket.emit('chat message', {
+          msg: result.message,
+          userId: result.user_id,
+          timestamp: result.timestamp
+        });
+      });
+    });
+  });
+
+});
+  
+server.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
 });

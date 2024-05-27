@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Socket chat</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -57,7 +56,13 @@
 
     <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Chat</h1>
+<<<<<<< HEAD
         <a href="/" class="create-group-link">Register</a>
+=======
+        <input id="username-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black" placeholder="Enter Username">
+        <button id="load-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Chat</button>
+        <a href="/auth.html" class="create-group-link">Register</a>
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
         <a href="/groups.html" class="create-group-link">Create Groups</a>
     </header>
 
@@ -67,8 +72,7 @@
 
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
-            <input id="input" autocomplete="off"
-                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
+            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
             <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
         </form>
     </div>
@@ -92,12 +96,23 @@
                     socket.emit('load messages', currentGroup);
                 });
 
+<<<<<<< HEAD
         console.log("cookie: " + document.cookie)
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
                 var msgData = { msg: input.value, userId: currentUsername, group: currentGroup };
                 console.log(msgData)
+=======
+        socket.on('connect', () => {
+            socket.emit('load messages');
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value) {
+                var msgData = { msg: input.value, userId: socket.username };
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
                 socket.emit('chat message', msgData);
                 input.value = '';
             }
@@ -123,7 +138,11 @@
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
+<<<<<<< HEAD
             } else if (msgData.userId === currentUsername) {
+=======
+            } else if (msgData.userId === socket.username) {
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
                 item.classList.add('bg-green-600', 'user');
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
@@ -132,6 +151,19 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
+<<<<<<< HEAD
+=======
+        loadChatButton.addEventListener('click', function () {
+            var username = usernameInput.value;
+            if (username) {
+                socket.username = username;
+                socket.emit('set username', username);
+                socket.emit('load messages');
+            } else {
+                alert("Please enter a username.");
+            }
+        });
+>>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
 
     </script>
 </body>
