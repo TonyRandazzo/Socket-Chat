@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Socket chat</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -46,7 +47,8 @@
 
     <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Groups</h1>
-        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black" placeholder="Enter Group Name">
+        <input id="groupname-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
+            placeholder="Enter Group Name">
         <button id="load-group-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Group Chat</button>
     </header>
 
@@ -58,7 +60,8 @@
 
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <div class="flex h-12 box-border mt-2">
-            <input id="group-input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
+            <input id="group-input" autocomplete="off"
+                class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Group name" />
             <button id="join-group" class="bg-green-800 border-none px-4 m-1 rounded text-white">Join Group</button>
             <button id="leave-group" class="bg-red-800 border-none px-4 m-1 rounded text-white">Leave Group</button>
         </div>
@@ -66,7 +69,8 @@
 
     <div class="fixed bottom-12 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
-            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" placeholder="Type a message" />
+            <input id="input" autocomplete="off" class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none"
+                placeholder="Type a message" />
             <button class="bg-gray-800 border-none px-4 m-1 rounded text-white">Send</button>
         </form>
     </div>
@@ -83,12 +87,8 @@
         var currentGroup = '';
         var groupnameInput = document.getElementById('groupname-input');
         var loadGroupChatButton = document.getElementById('load-group-chat');
-<<<<<<< HEAD
         const username = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
         
-=======
-
->>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
         socket.on('connect', () => {
             socket.emit('load messages', currentGroup);
         });
@@ -150,19 +150,6 @@
             } else {
                 alert("Please enter a group name.");
             }
-<<<<<<< HEAD
-        });
-
-        leaveGroupButton.addEventListener('click', function () {
-            var groupName = groupInput.value;
-            if (groupName) {
-                socket.emit('leave group', groupName);
-                currentGroup = '';
-            } else {
-                alert("Please enter a group name.");
-            }
-=======
->>>>>>> ab626765df608c051ed38b5a13638f79925b2b77
         });
 
         leaveGroupButton.addEventListener('click', function () {
@@ -174,7 +161,6 @@
                 alert("Please enter a group name.");
             }
         });
-
     </script>
 </body>
 
