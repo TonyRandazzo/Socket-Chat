@@ -6,12 +6,14 @@ const { Server } = require('socket.io');
 const io = new Server(server);
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
-// Configura il middleware per analizzare il corpo delle richieste
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser()); 
 
-// Configurazione della connessione al database MySQL
+
 const connection = mysql.createConnection({
   host: 'chat_db',
   user: 'root',
@@ -19,12 +21,10 @@ const connection = mysql.createConnection({
   database: 'chat_db'
 });
 
-// Connessione al database
 connection.connect((err) => {
   if (err) throw err;
   console.log('Connesso al database MySQL!');
 
-  // Creazione delle tabelle se non esistono
   const createMessagesTableQuery = `
     CREATE TABLE IF NOT EXISTS messages (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,20 +51,18 @@ connection.connect((err) => {
   });
 });
 
-// Rotte per servire i file HTML
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/auth.html');
 });
 
-app.get('/auth.html', (req, res) => {
-  res.sendFile(__dirname + '/auth.html');
+app.get('/index.html', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
 });
 
 app.get('/groups.html', (req, res) => {
   res.sendFile(__dirname + '/groups.html');
 });
 
-// Rotta per la registrazione degli utenti
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
   const insertUserQuery = `
@@ -79,7 +77,6 @@ app.post('/register', (req, res) => {
   });
 });
 
-// Rotta per il login degli utenti
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const selectUserQuery = `
@@ -91,18 +88,18 @@ app.post('/login', (req, res) => {
       return res.status(500).send('Errore nel login');
     }
     if (results.length > 0) {
-      res.status(200).send('Login avvenuto con successo');
+      res.cookie('username', username, { maxAge: 900000, httpOnly: true });
+      res.status(200).json({ success: true, message: 'Login avvenuto con successo' });
     } else {
-      res.status(401).send('Credenziali non valide');
+      res.status(401).json({ success: false, message: 'Credenziali non valide' });
     }
   });
 });
 
-// Gestione della connessione tramite Socket.io
+
 io.on('connection', (socket) => {
   console.log('Utente Connesso');
 
-  // Verifica se l'utente è autenticato
   socket.on('authenticate', ({ username, password }) => {
     const selectUserQuery = `
       SELECT * FROM users WHERE username = ? AND password = ?;
@@ -112,33 +109,17 @@ io.on('connection', (socket) => {
         socket.emit('authentication error', 'Credenziali non valide');
       } else {
         socket.username = username;
-        socket.emit('authenticated');
+        socket.emit('authenticated', username);
 
         console.log(`Utente ${username} autenticato`);
 
-        // Emissione messaggio di stato online
         io.emit('chat message', { msg: 'Online', userId: 'system' });
 
-        // Gestione della disconnessione
         socket.on('disconnect', () => {
           console.log('Utente Disconnesso');
           io.emit('chat message', { msg: 'Offline', userId: 'system' });
         });
 
-        // Gestione dell'entrata nei gruppi
-        socket.on('join group', (group) => {
-          socket.join(group);
-          io.to(group).emit('chat message', { msg: `Utente ${socket.username} ha unito ${group}`, userId: 'system' });
-        });
-
-        // Gestione dell'uscita dai gruppi
-        socket.on('leave group', (group) => {
-          socket.leave(group);
-          io.to(group).emit('chat message', { msg: `Utente ${socket.username} ha lasciato ${group}`, userId: 'system' });
-          socket.emit('left group', group);
-        });
-
-        // Gestione dei messaggi della chat
         socket.on('chat message', (data) => {
           const { msg, group } = data;
           const insertMessageQuery = `
@@ -156,7 +137,6 @@ io.on('connection', (socket) => {
           }
         });
 
-        // Caricamento dei messaggi
         socket.on('load messages', (group) => {
           const selectMessagesQuery = `
             SELECT * FROM messages WHERE group_name = ? ORDER BY timestamp ASC;
@@ -177,7 +157,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Avvio del server
 server.listen(3000, () => {
   console.log('In ascolto su http://localhost:3000');
 });

@@ -57,13 +57,9 @@
 
     <header class="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 flex items-center justify-between w-full">
         <h1 class="text-center text-xl">Socket Chat</h1>
-        <input id="username-input" class="border border-gray-500 rounded px-2 py-1 focus:outline-none text-black"
-            placeholder="Enter Username">
-        <button id="load-chat" class="bg-blue-500 text-white px-4 py-1 rounded">Load Chat</button>
-        <a href="/auth.html" class="create-group-link">Register</a>
+        <a href="/" class="create-group-link">Register</a>
         <a href="/groups.html" class="create-group-link">Create Groups</a>
     </header>
-
 
     <div class="flex items-center justify-center w-full h-full">
         <ul id="messages" class="box list-none p-4 bg-white rounded-lg shadow-lg w-3/4 overflow-auto"></ul>
@@ -83,26 +79,25 @@
         var messages = document.getElementById('messages');
         var form = document.getElementById('form');
         var input = document.getElementById('input');
-        var currentGroup = '';
-        var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
-        var savedMessagesByGroup = JSON.parse(localStorage.getItem('messagesByGroup')) || {};
         var usernameInput = document.getElementById('username-input');
+        var passwordInput = document.getElementById('password-input');
         var loadChatButton = document.getElementById('load-chat');
+        var currentUsername = '';
+        var currentGroup = ''
+        const usernameLogin = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1")
+        socket.emit('authenticate', { username: usernameLogin, password: passwordLogin});
+        socket.on('authenticated', (authUsername) => {
+                    currentUsername = authUsername;
+                    socket.emit('load messages', currentGroup);
+                });
 
-
-        socket.on('connect', () => {
-            socket.emit('load messages', currentGroup);
-        });
-        var savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
-        savedMessages.forEach(function (msgData) {
-            appendMessage(msgData);
-        });
-
-
+        console.log("cookie: " + document.cookie)
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
-                var msgData = { msg: input.value, userId: socket.id, group: currentGroup };
+                var msgData = { msg: input.value, userId: currentUsername, group: currentGroup };
+                console.log(msgData)
                 socket.emit('chat message', msgData);
                 input.value = '';
             }
@@ -110,7 +105,6 @@
 
         socket.on('chat message', function (msgData) {
             appendMessage(msgData);
-            saveMessage(msgData);
         });
 
         function appendMessage(msgData) {
@@ -129,7 +123,7 @@
 
             if (msgData.userId === 'system') {
                 item.classList.add('system');
-            } else if (msgData.userId === socket.id) {
+            } else if (msgData.userId === currentUsername) {
                 item.classList.add('bg-green-600', 'user');
             } else {
                 item.classList.add('bg-gray-600', 'rounded-2xl');
@@ -138,47 +132,6 @@
             messages.scrollTop = messages.scrollHeight;
         }
 
-        function saveMessage(msgData) {
-            if (msgData.group) {
-                if (!savedMessagesByGroup[msgData.group]) {
-                    savedMessagesByGroup[msgData.group] = [];
-                }
-                savedMessagesByGroup[msgData.group].push(msgData);
-                localStorage.setItem('messagesByGroup', JSON.stringify(savedMessagesByGroup));
-            } else {
-                if (!savedMessagesByUser[msgData.userId]) {
-                    savedMessagesByUser[msgData.userId] = [];
-                }
-                savedMessagesByUser[msgData.userId].push(msgData);
-                localStorage.setItem('messagesByUser', JSON.stringify(savedMessagesByUser));
-            }
-        }
-        socket.on('connect', function () {
-            var currentUsername = socket.id;
-            localStorage.setItem('currentUsername', currentUsername);
-        });
-        loadChatButton.addEventListener('click', function () {
-            var username = usernameInput.value;
-            if (username) {
-                localStorage.setItem('currentUsername', username);
-                var savedMessagesByUser = JSON.parse(localStorage.getItem('messagesByUser')) || {};
-                var userMessages = savedMessagesByUser[username];
-                if (userMessages) {
-                    messages.innerHTML = '';
-                    userMessages.forEach(function (msgData) {
-                        appendMessage(msgData);
-                    });
-                    currentUsername = username;
-                    socket.id = currentUsername
-                    console.log(socket.id)
-                    socket.emit('set username', currentUsername);
-                } else {
-                    alert("No messages found for this user.");
-                }
-            } else {
-                alert("Please enter a username.");
-            }
-        });
 
     </script>
 </body>

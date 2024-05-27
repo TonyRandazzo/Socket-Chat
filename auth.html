@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Chat</title>
 </head>
+
 <body>
   <h1>Chat</h1>
 
@@ -29,7 +31,7 @@
       e.preventDefault();
       const username = document.getElementById('registerUsername').value;
       const password = document.getElementById('registerPassword').value;
-      
+
       fetch('/register', {
         method: 'POST',
         headers: {
@@ -37,16 +39,16 @@
         },
         body: JSON.stringify({ username, password })
       })
-      .then(response => response.text())
-      .then(data => alert(data))
-      .catch(error => console.error('Errore:', error));
+        .then(response => response.text())
+        .then(data => alert(data))
+        .catch(error => console.error('Errore:', error));
     });
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('loginUsername').value;
       const password = document.getElementById('loginPassword').value;
-      
+
       fetch('/login', {
         method: 'POST',
         headers: {
@@ -54,10 +56,22 @@
         },
         body: JSON.stringify({ username, password })
       })
-      .then(response => response.text())
-      .then(data => alert(data))
-      .catch(error => console.error('Errore:', error));
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.message === "Login avvenuto con successo") { 
+            alert(data.message); 
+            document.cookie = `username=${username};`;
+            document.cookie = `password=${password};`;
+            window.location.href = '/index.html';
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => console.error('Errore:', error));
     });
+
   </script>
 </body>
+
 </html>
