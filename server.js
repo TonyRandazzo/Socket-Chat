@@ -88,7 +88,6 @@ app.post('/login', (req, res) => {
       return res.status(500).send('Errore nel login');
     }
     if (results.length > 0) {
-      res.cookie('username', username, { maxAge: 900000, httpOnly: true });
       res.status(200).json({ success: true, message: 'Login avvenuto con successo' });
     } else {
       res.status(401).json({ success: false, message: 'Credenziali non valide' });

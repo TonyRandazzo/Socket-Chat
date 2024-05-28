@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "socket app",
     "dependencies": {
+        "cookie-parser": "^1.4.6",
         "express": "^4.19.2",
         "mysql": "^2.18.1",
         "socket.io": "^4.0.0"
