@@ -7,8 +7,9 @@ const io = new Server(server);
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+var path = require('path');
 
-
+app.use(express.static(path.join(__dirname, '/')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser()); 
@@ -55,8 +56,8 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/auth.html');
 });
 
-app.get('/index.html', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+app.get('/chat.html', (req, res) => {
+  res.sendFile(__dirname + '/chat.html');
 });
 
 app.get('/groups.html', (req, res) => {

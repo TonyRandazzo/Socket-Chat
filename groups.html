@@ -88,11 +88,16 @@
         var groupnameInput = document.getElementById('groupname-input');
         var loadGroupChatButton = document.getElementById('load-group-chat');
         const username = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        const password = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1");
         
-        socket.on('connect', () => {
+        socket.emit('authenticate', { username: username, password: password });
+    
+        socket.on('authenticated', (authUsername) => {
+            console.log(`Utente autenticato come ${authUsername}`);
+            socket.username = authUsername;
             socket.emit('load messages', currentGroup);
         });
-
+    
         loadGroupChatButton.addEventListener('click', function () {
             var groupName = groupnameInput.value;
             if (groupName) {
@@ -102,7 +107,7 @@
                 alert("Please enter a group name.");
             }
         });
-
+    
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
@@ -111,25 +116,25 @@
                 input.value = '';
             }
         });
-
+    
         socket.on('chat message', function (msgData) {
             appendMessage(msgData);
         });
-
+    
         function appendMessage(msgData) {
             var item = document.createElement('li');
-
+    
             if (msgData.userId !== 'system') {
                 var userLabel = document.createElement('span');
                 userLabel.textContent = msgData.userId;
                 userLabel.classList.add('user-label');
                 item.appendChild(userLabel);
             }
-
+    
             var messageText = document.createElement('span');
             messageText.textContent = msgData.msg;
             item.appendChild(messageText);
-
+    
             if (msgData.userId === 'system') {
                 item.classList.add('system');
             } else if (msgData.userId === socket.username) {
@@ -140,7 +145,7 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
-
+    
         joinGroupButton.addEventListener('click', function () {
             var groupName = groupInput.value;
             if (groupName) {
@@ -151,7 +156,7 @@
                 alert("Please enter a group name.");
             }
         });
-
+    
         leaveGroupButton.addEventListener('click', function () {
             var groupName = groupInput.value;
             if (groupName) {
@@ -162,6 +167,7 @@
             }
         });
     </script>
+    
 </body>
 
 </html>
