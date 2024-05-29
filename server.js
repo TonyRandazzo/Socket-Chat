@@ -12,7 +12,7 @@ var path = require('path');
 app.use(express.static(path.join(__dirname, '/')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser()); 
+app.use(cookieParser());
 
 
 const connection = mysql.createConnection({
@@ -123,18 +123,23 @@ io.on('connection', (socket) => {
         socket.on('chat message', (data) => {
           const { msg, group } = data;
           const insertMessageQuery = `
-            INSERT INTO messages (group_name, user_id, message)
-            VALUES (?, ?, ?);
+              INSERT INTO messages (group_name, user_id, message)
+              VALUES (?, ?, ?);
           `;
           connection.query(insertMessageQuery, [group, socket.username, msg], (err, result) => {
-            if (err) throw err;
-            console.log('Messaggio salvato nel database!');
+              if (err) throw err;
+              console.log('Messaggio salvato nel database!');
           });
-          if (data.group) {
-            io.to(data.group).emit('chat message', { msg: data.msg, userId: socket.username });
-          } else {
-            io.emit('chat message', { msg: data.msg, userId: socket.username });
+          if (group === currentGroup) { 
+              io.to(group).emit('chat message', { msg: data.msg, userId: socket.username });
           }
+      });
+        socket.on('create group', (groupName) => {
+          io.emit('group created', groupName);
+        });
+        socket.on('join group', (groupName) => {
+          socket.join(groupName);
+          io.emit('joined group', groupName);
         });
 
         socket.on('load messages', (group) => {
