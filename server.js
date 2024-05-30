@@ -96,7 +96,20 @@ app.post('/login', (req, res) => {
   });
 });
 
-
+app.get('/get-users', (req, res) => {
+  const selectUsersQuery = `
+    SELECT id, username FROM users;
+  `;
+  connection.query(selectUsersQuery, (err, results) => {
+    if (err) {
+      console.error('Errore nel recupero degli utenti:', err);
+      res.status(500).send('Errore nel recupero degli utenti');
+    } else {
+      const users = results.map(result => ({ id: result.id, username: result.username }));
+      res.status(200).json(users);
+    }
+  });
+});
 io.on('connection', (socket) => {
   console.log('Utente Connesso');
 

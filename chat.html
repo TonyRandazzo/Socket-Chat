@@ -64,7 +64,11 @@
     <div class="flex items-center justify-center w-full h-full">
         <ul id="messages" class="box list-none p-4 bg-white rounded-lg shadow-lg w-3/4 overflow-auto"></ul>
     </div>
-
+    <div id="user-list" class="w-1/4 h-full bg-gray-200 p-4 overflow-auto">
+        <h2 class="text-lg font-semibold mb-4">Utenti Online</h2>
+        <ul id="online-users" class="list-none">
+        </ul>
+    </div>
     <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
             <input id="input" autocomplete="off"
@@ -89,7 +93,7 @@
         socket.emit('authenticate', { username: usernameLogin, password: passwordLogin });
         socket.on('authenticated', (authUsername) => {
             document.cookie = `username=${authUsername}; path=/;`;
-            document.cookie = `password=${passwordLogin}; path=/;`; 
+            document.cookie = `password=${passwordLogin}; path=/;`;
             currentUsername = authUsername;
             socket.emit('load messages', currentGroup);
         });
@@ -133,7 +137,45 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
+        function loadUsers() {
+            fetch('/get-users')
+                .then(response => response.json())
+                .then(users => {
+                    const userList = document.getElementById('online-users');
+                    userList.innerHTML = '';
+                    users.forEach(user => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = user.username;
+                        const chatButton = document.createElement('button');
+                        chatButton.textContent = 'Chat';
+                        chatButton.addEventListener('click', () => openChat(user.id, user.username)); 
+                        listItem.appendChild(chatButton);
+                        userList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Errore nel caricamento degli utenti:', error));
+        }
+        function getUserIdFromCookie() {
+            const cookie = document.cookie;
+            const cookieArray = cookie.split('; ');
+            for (let i = 0; i < cookieArray.length; i++) {
+                const cookieItem = cookieArray[i].split('=');
+                if (cookieItem[0] === 'user_id') {
+                    return cookieItem[1];
+                }
+            }
+            return null;
+        }
+        function openChat(userId, username) {
+            const currentUserId = getUserIdFromCookie(); 
+            if (userId === currentUserId) {
+                console.log('Hai cliccato sul tuo stesso utente');
+            } else {
+                console.log(`Apri chat con l'utente ${username}`);
+            }
+        }
 
+        window.addEventListener('load', loadUsers);
 
     </script>
 </body>
