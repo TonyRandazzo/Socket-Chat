@@ -50,10 +50,6 @@
             color: black;
             display: block;
         }
-
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 
@@ -73,7 +69,7 @@
         <ul id="online-users" class="list-none">
         </ul>
     </div>
-    <div id="chat-form" class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md hidden">
+    <div class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-15 p-1 backdrop-filter backdrop-blur-md">
         <form id="form" action="" class="flex h-12 box-border">
             <input id="input" autocomplete="off"
                 class="border-none px-4 flex-grow rounded-full m-1 focus:outline-none" />
@@ -87,27 +83,22 @@
         var messages = document.getElementById('messages');
         var form = document.getElementById('form');
         var input = document.getElementById('input');
-        var usernameInput = document.getElementById('username-input');
-        var passwordInput = document.getElementById('password-input');
-        var loadChatButton = document.getElementById('load-chat');
         var currentUsername = '';
-        var currentGroup = '';
+        var currentRoom = '';
         const usernameLogin = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
-        const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1")
         socket.emit('authenticate', { username: usernameLogin, password: passwordLogin });
         socket.on('authenticated', (authUsername) => {
             document.cookie = `username=${authUsername}; path=/;`;
             document.cookie = `password=${passwordLogin}; path=/;`;
             currentUsername = authUsername;
-            socket.emit('load messages', currentGroup);
+            socket.emit('load messages', currentRoom);
         });
 
-        console.log("cookie: " + document.cookie);
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
-                var msgData = { msg: input.value, userId: currentUsername, group: currentGroup };
-                console.log(msgData);
+                var msgData = { msg: input.value, userId: currentUsername, room: currentRoom };
                 socket.emit('chat message', msgData);
                 input.value = '';
             }
@@ -141,7 +132,7 @@
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         }
-        
+
         function loadUsers() {
             fetch('/get-users')
                 .then(response => response.json())
@@ -153,7 +144,7 @@
                         listItem.textContent = user.username;
                         const chatButton = document.createElement('button');
                         chatButton.textContent = 'Chat';
-                        chatButton.addEventListener('click', () => openChat(user.id, user.username)); 
+                        chatButton.addEventListener('click', () => openChat(user.id, user.username));
                         listItem.appendChild(chatButton);
                         userList.appendChild(listItem);
                     });
@@ -174,21 +165,31 @@
         }
 
         function openChat(userId, username) {
-            const currentUserId = getUserIdFromCookie(); 
+            const currentUserId = getUserIdFromCookie();
             if (userId === currentUserId) {
                 console.log('Hai cliccato sul tuo stesso utente');
             } else {
                 console.log(`Apri chat con l'utente ${username}`);
-                currentGroup = `private_${currentUserId}_${userId}`;
-                socket.emit('join private chat', { room: currentGroup, userId: currentUserId });
-                document.getElementById('chat-form').classList.remove('hidden');
-                messages.innerHTML = '';
-                socket.emit('load messages', currentGroup);
+                currentRoom = [currentUsername, username].sort().join('-');
+                socket.emit('join private chat', { room: currentRoom, userId });
+                clearMessages();
+                loadRoomMessages(currentRoom);
             }
         }
 
-        window.addEventListener('load', loadUsers);
+        function clearMessages() {
+            messages.innerHTML = '';
+        }
 
+        function loadRoomMessages(room) {
+            socket.emit('load messages', room);
+        }
+
+        socket.on('load messages', function (msgData) {
+            appendMessage(msgData);
+        });
+
+        window.addEventListener('load', loadUsers);
     </script>
 </body>
 
