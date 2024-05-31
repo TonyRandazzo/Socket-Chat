@@ -14,7 +14,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
 const connection = mysql.createConnection({
   host: 'chat_db',
   user: 'root',
@@ -110,6 +109,7 @@ app.get('/get-users', (req, res) => {
     }
   });
 });
+
 io.on('connection', (socket) => {
   console.log('Utente Connesso');
 
@@ -126,35 +126,44 @@ io.on('connection', (socket) => {
 
         console.log(`Utente ${username} autenticato`);
 
-        io.emit('chat message', { msg: 'Online', userId: 'system' });
+        io.emit('chat message', { msg:  `${username} Online`, userId: 'system' });
 
         socket.on('disconnect', () => {
           console.log('Utente Disconnesso');
-          io.emit('chat message', { msg: 'Offline', userId: 'system' });
+          io.emit('chat message', { msg: `${username} Offline`, userId: 'system' });
         });
 
         socket.on('chat message', (data) => {
-          const { msg, group } = data;
+          const { msg, group, room } = data;
           const insertMessageQuery = `
             INSERT INTO messages (group_name, user_id, message)
             VALUES (?, ?, ?);
           `;
-          connection.query(insertMessageQuery, [group, socket.username, msg], (err, result) => {
+          connection.query(insertMessageQuery, [group || room, socket.username, msg], (err, result) => { 
             if (err) throw err;
             console.log('Messaggio salvato nel database!');
           });
-          if (data.group) {
-            io.to(data.group).emit('chat message', { msg: data.msg, userId: socket.username });
+          if (room) {
+            io.to(room).emit('chat message', { msg: data.msg, userId: socket.username }); 
+          } else if (group) {
+            io.to(group).emit('chat message', { msg: data.msg, userId: socket.username });
           } else {
             io.emit('chat message', { msg: data.msg, userId: socket.username });
           }
         });
+
         socket.on('create group', (groupName) => {
           io.emit('group created', groupName);
         });
+
         socket.on('join group', (groupName) => {
           socket.join(groupName);
           io.emit('joined group', groupName);
+        });
+
+        socket.on('join private chat', ({ room, userId }) => { 
+          socket.join(room);
+          console.log(`${socket.username} joined private chat room: ${room}`);
         });
 
         socket.on('load messages', (group) => {
