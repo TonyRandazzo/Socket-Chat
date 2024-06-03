@@ -35,12 +35,13 @@ connection.connect((err) => {
     );
   `;
   const createUsersTableQuery = `
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      username VARCHAR(255) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL
-    );
-  `;
+  CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    profile_image VARCHAR(255) DEFAULT 'default_profile_image.jpg'
+  );
+`;
   connection.query(createMessagesTableQuery, (err, result) => {
     if (err) throw err;
     console.log('Tabella messages creata!');
