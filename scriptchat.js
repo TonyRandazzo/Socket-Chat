@@ -47,7 +47,7 @@ function appendMessage(msgData) {
     if (msgData.userId === 'system') {
         item.classList.add('system');
     } else if (msgData.userId === currentUsername) {
-        item.classList.add('bg-green-600', 'user');
+        item.classList.add('bg-green-500', 'user');
     } else {
         item.classList.add('bg-gray-600', 'rounded-2xl');
     }
