@@ -5,7 +5,7 @@ var input = document.getElementById('input');
 var currentUsername = '';
 var currentRoom = '';
 const usernameLogin = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
-const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1")
+const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1");
 socket.emit('authenticate', { username: usernameLogin, password: passwordLogin });
 socket.on('authenticated', (authUsername) => {
     document.cookie = `username=${authUsername}; path=/;`;
@@ -17,32 +17,45 @@ socket.on('authenticated', (authUsername) => {
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
-        var msgData = { msg: input.value, userId: currentUsername, room: currentRoom };
+        var msgData = { 
+            msg: input.value, 
+            userId: currentUsername, 
+            room: currentRoom,
+            timestamp: Date.now()
+        };
         socket.emit('chat message', msgData);
         input.value = '';
     }
 });
 
 socket.on("chat message", function (msgData) {
-    appendMessage(msgData);
-    if (msgData.userId !== currentUsername) {
-        showNotification(`${msgData.userId}: ${msgData.msg}`);
+    appendMessage(msgData, false);
+    if (msgData.userId !== currentUsername && !document.hasFocus()) {
     }
 });
 
-function appendMessage(msgData) {
+function appendMessage(msgData, isHistorical = false) {
     var item = document.createElement('li');
 
+    var messageContainer = document.createElement('div');
+    messageContainer.classList.add('message-container');
+
+    var userAndTimestampContainer = document.createElement('div');
+    userAndTimestampContainer.classList.add('user-timestamp-container');
+
     if (msgData.userId !== 'system') {
-        var userLabel = document.createElement('span');
-        userLabel.textContent = msgData.userId;
-        userLabel.classList.add('user-label');
-        item.appendChild(userLabel);
+        var userAndTimestamp = document.createElement('span');
+        userAndTimestamp.textContent = `${msgData.userId} - ${new Date(msgData.timestamp).toLocaleString()}`;
+        userAndTimestamp.classList.add('user-label');
+        userAndTimestampContainer.appendChild(userAndTimestamp);
     }
 
     var messageText = document.createElement('span');
     messageText.textContent = msgData.msg;
-    item.appendChild(messageText);
+    messageContainer.appendChild(userAndTimestampContainer);
+    messageContainer.appendChild(messageText);
+
+    item.appendChild(messageContainer);
 
     if (msgData.userId === 'system') {
         item.classList.add('system');
@@ -53,7 +66,14 @@ function appendMessage(msgData) {
     }
     messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
+
+    if (!isHistorical && msgData.userId !== currentUsername) {
+        showNotification(`${msgData.userId}: ${msgData.msg}`);
+    }
 }
+
+
+
 
 function loadUsers() {
     fetch('/get-users')
@@ -147,7 +167,9 @@ function loadRoomMessages(room) {
 }
 
 socket.on('load messages', function (msgData) {
-    appendMessage(msgData);
+    msgData.forEach(message => {
+        appendMessage(message, true);
+    });
 });
 
 window.addEventListener('load', loadUsers);

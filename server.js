@@ -41,7 +41,7 @@ connection.connect((err) => {
     password VARCHAR(255) NOT NULL,
     profile_image VARCHAR(255) DEFAULT 'default_profile_image.jpg'
   );
-`;
+  `;
   connection.query(createMessagesTableQuery, (err, result) => {
     if (err) throw err;
     console.log('Tabella messages creata!');
@@ -127,29 +127,30 @@ io.on('connection', (socket) => {
 
         console.log(`Utente ${username} autenticato`);
 
-        io.emit('chat message', { msg:  `${username} Online`, userId: 'system' });
+        io.emit('chat message', { msg: `${username} Online`, userId: 'system', timestamp: Date.now() });
 
         socket.on('disconnect', () => {
           console.log('Utente Disconnesso');
-          io.emit('chat message', { msg: `${username} Offline`, userId: 'system' });
+          io.emit('chat message', { msg: `${username} Offline`, userId: 'system', timestamp: Date.now() });
         });
 
         socket.on('chat message', (data) => {
           const { msg, group, room } = data;
           const insertMessageQuery = `
-            INSERT INTO messages (group_name, user_id, message)
-            VALUES (?, ?, ?);
+            INSERT INTO messages (group_name, user_id, message, timestamp)
+            VALUES (?, ?, ?, ?);
           `;
-          connection.query(insertMessageQuery, [group || room, socket.username, msg], (err, result) => { 
+          const timestamp = new Date();
+          connection.query(insertMessageQuery, [group || room, socket.username, msg, timestamp], (err, result) => {
             if (err) throw err;
             console.log('Messaggio salvato nel database!');
           });
           if (room) {
-            io.to(room).emit('chat message', { msg: data.msg, userId: socket.username }); 
+            io.to(room).emit('chat message', { msg: data.msg, userId: socket.username, timestamp });
           } else if (group) {
-            io.to(group).emit('chat message', { msg: data.msg, userId: socket.username });
+            io.to(group).emit('chat message', { msg: data.msg, userId: socket.username, timestamp });
           } else {
-            io.emit('chat message', { msg: data.msg, userId: socket.username });
+            io.emit('chat message', { msg: data.msg, userId: socket.username, timestamp });
           }
         });
 
@@ -162,7 +163,7 @@ io.on('connection', (socket) => {
           io.emit('joined group', groupName);
         });
 
-        socket.on('join private chat', ({ room, userId }) => { 
+        socket.on('join private chat', ({ room, userId }) => {
           socket.join(room);
           console.log(`${socket.username} joined private chat room: ${room}`);
         });
@@ -173,13 +174,11 @@ io.on('connection', (socket) => {
           `;
           connection.query(selectMessagesQuery, [group], (err, results) => {
             if (err) throw err;
-            results.forEach((result) => {
-              socket.emit('chat message', {
-                msg: result.message,
-                userId: result.user_id,
-                timestamp: result.timestamp
-              });
-            });
+            socket.emit('load messages', results.map(result => ({
+              msg: result.message,
+              userId: result.user_id,
+              timestamp: result.timestamp
+            })));
           });
         });
       }
