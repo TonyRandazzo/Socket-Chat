@@ -4,22 +4,43 @@ var form = document.getElementById('form');
 var input = document.getElementById('input');
 var currentUsername = '';
 var currentRoom = '';
+
+const userFilterInput = document.getElementById('user-filter');
+userFilterInput.addEventListener('input', function () {
+    const filterText = this.value.toLowerCase();
+    const userList = document.getElementById('online-users');
+    const userItems = userList.querySelectorAll('li');
+
+    userItems.forEach(userItem => {
+        const username = userItem.querySelector('.username').textContent.toLowerCase();
+        if (username.includes(filterText)) {
+            userItem.style.display = 'block';
+        } else {
+            userItem.style.display = 'none';
+        }
+    });
+});
+
 const usernameLogin = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
 const passwordLogin = document.cookie.replace(/(?:(?:^|.*;\s*)password\s*=\s*([^;]*).*$)|^.*$/, "$1");
+
+
 socket.emit('authenticate', { username: usernameLogin, password: passwordLogin });
 socket.on('authenticated', (authUsername) => {
     document.cookie = `username=${authUsername}; path=/;`;
     document.cookie = `password=${passwordLogin}; path=/;`;
     currentUsername = authUsername;
     socket.emit('load messages', currentRoom);
+
+    document.getElementById('loggedUserName').textContent = authUsername;
 });
 
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
-        var msgData = { 
-            msg: input.value, 
-            userId: currentUsername, 
+        var msgData = {
+            msg: input.value,
+            userId: currentUsername,
             room: currentRoom,
             timestamp: Date.now()
         };

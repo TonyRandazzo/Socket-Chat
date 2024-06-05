@@ -142,14 +142,15 @@
     <div id="app">
         <header class="bg-gray-900 text-white p-4 flex items-center justify-between">
             <a href="chat.html" class="text-center text-xl">Socket Chat</a>
-            <a href="/" class="create-group-link">Register</a>
+            <a href="/" class="create-group-link">Log in</a>
             <a href="/groups.html" class="create-group-link">Create Groups</a>
-            <!-- <input type="file" id="profile-image"> -->
+            <span>Bentornato, <span class="text-green-400" id="loggedUserName"></span>!</span>
         </header>
 
         <div class="main-content w-full flex">
             <div id="user-list" class="w-1/4 bg-gray-200 p-4 overflow-auto flex flex-col items-center">
                 <h2 class="text-lg text-2xl font-semibold mb-1 text-center">Lista Utenti</h2>
+                <input id="user-filter" type="text" placeholder="Cerca utente..." class="p-2 border rounded mb-4 mt-3">
                 <ul id="online-users" class="list-none w-full flex flex-col items-center">
                 </ul>
             </div>
