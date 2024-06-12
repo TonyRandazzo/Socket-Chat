@@ -1,0 +1,1 @@
+The project is in the master branch. You have to downoad it and open using the command "docker compose up --build" for the first time, then (after the first time) you can simply write"docker compose up. Ensure to close all the ports you have open
