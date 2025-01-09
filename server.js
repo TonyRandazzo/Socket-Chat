@@ -18,7 +18,7 @@ const connection = mysql.createConnection({
   host: 'chat_db',
   user: 'root',
   password: 'password',
-  database: 'chat_db'
+  database: 'chat_db',
 });
 
 connection.connect((err) => {
